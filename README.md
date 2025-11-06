@@ -21,7 +21,7 @@ password
 
 confirmPassword
 
-role
+role (Must be super admin, tenant admin, or support)
 
 POST /login
 
