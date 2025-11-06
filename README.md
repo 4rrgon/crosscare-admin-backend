@@ -12,14 +12,21 @@ Run npm start to run the server on localhost:3000
 # Endpoints
 
 POST /register (This is temporary and will be removed in the future)
+
 companyName
+
 email
+
 password
+
 confirmPassword
+
 role
 
 POST /login
+
 email
+
 password
 
 GET /signout
