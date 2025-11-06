@@ -1,0 +1,20 @@
+{
+  "name": "cs-546-lab-10",
+  "version": "1.0.0",
+  "description": "Crosscare Admin Portal Backend",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "dtracy",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "express-handlebars": "^8.0.1",
+    "express-session": "^1.18.1",
+    "mongodb": "^6.16.0"
+  }
+}
