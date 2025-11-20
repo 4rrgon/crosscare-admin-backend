@@ -3,7 +3,9 @@ Crosscare Admin Backend
 
 # Running the backend
 Create a .env file containing a secret and url for your postgres instance as follows:
+
 SECRET=someSecretString
+
 URL=postgres://username:password@host:port/database
 
 
