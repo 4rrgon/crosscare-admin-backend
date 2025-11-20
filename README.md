@@ -9,6 +9,7 @@ SECRET=someSecretString
 URL=postgres://username:password@host:port/database
 
 
+
 Run npm i to install dependecies
 
 Run npm start to run the server on localhost:3000
