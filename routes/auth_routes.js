@@ -45,7 +45,7 @@ router
 
       const registered = await register(companyName, email, password, role)
       if (registered.registrationCompleted){
-        return res.status(200).json("Successfully signed up" );
+        return res.status(200).json( { message: "Successfully signed up" } );
       } else {
         return res.status(500).json({ error: "Internal Server Error" });
       }

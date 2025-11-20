@@ -1,6 +1,6 @@
+import pool from "../config/postgres.js";
 import { checkName, checkPassword, checkRole, checkEmail, getSignupDate, getLastLogin } from "../helpers.js";
-import { users } from "../config/mongoCollections.js";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
 
 export const register = async (
   companyName,
@@ -9,67 +9,87 @@ export const register = async (
   role,
 ) => {
   if (!companyName || !email || !password || !role)
-    throw "All fields need to have valid values"
+    throw "All fields need to have valid values";
 
   companyName = checkName(companyName);
   if (!checkEmail(email))
-    throw 'Email is invalid'
+    throw 'Email is invalid';
 
   email = email.trim().toLowerCase();
 
-  const userCollection = await users()
-  const duplicateUser = await userCollection.findOne({email: email})
+  const client = await pool.connect();
+  try {
+    const dupCheck = await client.query(
+      `SELECT email FROM adminportal WHERE email = $1`,
+      [email]
+    );
 
-  if (duplicateUser)
-    throw `User with id of ${email} already exists`
+    if (dupCheck.rowCount > 0)
+      throw `User with id of ${email} already exists`;
 
-  password = checkPassword(password)
-  let hashedPassword = await bcrypt.hash(password, 16)
+    password = checkPassword(password);
+    const hashedPassword = await bcrypt.hash(password, 16);
 
-  role = checkRole(role)
+    role = checkRole(role);
 
-  let newUser = {
-    companyName: companyName,
-    email: email,
-    password: hashedPassword,
-    role: role,
-    signupDate: getSignupDate(),
-    lastLogin: null
+    const signupDate = getSignupDate();
+    const lastLogin = null;
+
+    const insertQuery = `
+      INSERT INTO adminportal (companyname, email, "password", "role", signupdate, lastlogin)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING email
+    `;
+    const insertValues = [companyName, email, hashedPassword, role, signupDate, lastLogin];
+
+    const insertInfo = await client.query(insertQuery, insertValues);
+
+    if (!insertInfo.rowCount || !insertInfo.rows[0])
+      throw `Could not add user with ID of ${email}`;
+
+    return { registrationCompleted: true };
+  } finally {
+    client.release();
   }
-
-  const insertInfo = await userCollection.insertOne(newUser)
-  if (!insertInfo.acknowledged || !insertInfo.insertedId)
-    throw `Could not add user with ID of ${email}`
-  
-  return {registrationCompleted: true}
 };
 
 export const login = async (email, password) => {
   if (!email || !password)
-    throw "All fields need to have valid values"
+    throw "All fields need to have valid values";
   if (!checkEmail(email))
-    throw 'Email is invalid'
+    throw 'Email is invalid';
   email = email.trim().toLowerCase();
-  password = checkPassword(password)
+  password = checkPassword(password);
 
-  const userCollection = await users()
-  const user = await userCollection.findOne({email: email})
+  const client = await pool.connect();
+  try {
+    const selectQuery = `
+      SELECT companyname, email, "password", "role", signupdate, lastlogin
+      FROM adminportal
+      WHERE email = $1
+      LIMIT 1
+    `;
+    const result = await client.query(selectQuery, [email]);
 
-  if (!user)
-    throw "Either the userId or password is invalid"
+    if (!result.rowCount)
+      throw "Either the userId or password is invalid";
 
-  const matchedPassword = await bcrypt.compare(password, user.password)
-  if (matchedPassword){
-     const returnedObj = {
-      companyName: user.companyName,
-      email: user.email,
-      role: user.role,
-      signupDate: user.signupDate,
-      lastLogin: getLastLogin()
-     }
-     return returnedObj
-  } else {
-    throw "Either the userId or password is invalid"
+    const user = result.rows[0];
+
+    const matchedPassword = await bcrypt.compare(password, user.password);
+    if (matchedPassword) {
+      const returnedObj = {
+        companyName: user.companyname,
+        email: user.email,
+        role: user.role,
+        signupDate: user.signupdate,
+        lastLogin: getLastLogin()
+      };
+      return returnedObj;
+    } else {
+      throw "Either the userId or password is invalid";
+    }
+  } finally {
+    client.release();
   }
-
 };
