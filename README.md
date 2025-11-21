@@ -3,7 +3,7 @@ Crosscare Admin Backend
 
 # Running the backend
 
-Create a postgres DB with the table "adminportal", by running the following on your postgres instance:
+Create a postgres DB with the table "adminportal", and populate it with the necesarry fields by running the following on your postgres instance:
 
 CREATE TABLE public.adminportal ( companyname text NULL, email text NULL, "password" text NULL, "role" text NULL, signupdate text NULL, lastlogin text NULL );
 
