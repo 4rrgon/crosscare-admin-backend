@@ -16,7 +16,8 @@ app.use(
           name: 'AuthenticationState',
           secret: secret,
           saveUninitialized: false,
-          resave: false
+          resave: false,
+          cookie: { secure: false }
      })
 )
 
@@ -27,8 +28,8 @@ app.use((req, res, next) => {
      const authenticated = req.session.user
      let status = '(Non-Authenticated)'
      if (authenticated){
-          if (req.session.user.role === 'superuser')
-               status = '(Authenticated Super User)'
+          if (req.session.user.role === 'super admin')
+               status = '(Authenticated Super admin)'
           else {
                status = '(Authenticated User)'
           }
@@ -38,10 +39,14 @@ app.use((req, res, next) => {
 })
 
 app.use('/signout', (req, res, next) => {
+     console.log(req.session);
      if (!req.session.user)
           return res.status(400).json({error: "Not signed in" })
      next()
 })
+
+
+
 
 
 configRoutes(app)

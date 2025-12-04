@@ -1,9 +1,48 @@
-//import express, express router as shown in lecture code
 import { Router } from "express";
-const router = Router()
 import bcrypt from "bcrypt"
+import session from "express-session";
 import { checkName, checkPassword, checkRole, checkEmail } from "../helpers.js";
-import { login, register } from "../data/users.js";
+import { acceptInvite, login, register, invite } from "../data/users.js";
+
+const router = Router()
+
+
+
+router
+  .route('/login')
+  .post(async (req, res) => {
+    try{
+      let email = req.body.email;
+      let password = req.body.password;
+
+      let missing = []
+      if (!email)
+        missing.push("email")
+      if (!password)
+        missing.push("password")
+
+      if (missing.length > 0){
+        return res.status(400).render('register', {
+          error: `The missing fields are: ${missing.join(", ")}`
+        })
+      }
+
+      const user = await login(email, password)
+        
+      req.session.user = {
+        companyName: user.companyName,
+        email: user.email,
+        role: user.role
+      }
+
+      console.log(req.session);
+
+      return res.json( user )
+      
+    } catch (e) {
+      return res.status(400).render('login', { error: e })
+    }
+  });
 
 router
   .route('/register')
@@ -56,39 +95,71 @@ router
      
   });
 
-router
-  .route('/login')
+  router
+  .route('/register/:id')
   .post(async (req, res) => {
-    try{
-      let email = req.body.email;
+    try {
       let password = req.body.password;
+      let confirmPassword = req.body.confirmPassword;
 
       let missing = []
-      if (!email)
-        missing.push("email")
       if (!password)
         missing.push("password")
+      if (!confirmPassword)
+        missing.push("confirmPassword")
+
 
       if (missing.length > 0){
-        return res.status(400).render('register', {
-          error: `The missing fields are: ${missing.join(", ")}`
-        })
+        return res.status(400).json({error: 'Must provide all fields'})
       }
 
-      const user = await login(email, password)
-        
-      req.session.user = {
-        companyName: user.companyName,
-        email: user.email,
-        role: user.role
+      password = checkPassword(password)
+      confirmPassword = checkPassword(confirmPassword)
+
+      if (password !== confirmPassword){
+        return res.status(400).json({ error: "The passwords do not match" });
       }
 
-      return res.json( user )
-      
+      const registered = await acceptInvite(req.params.id, password)
+      if (registered.registrationCompleted){
+        return res.status(200).json( { message: "Successfully signed up" } );
+      } else {
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
     } catch (e) {
-      return res.status(400).render('login', { error: e })
+      console.log(e)
+      return res.status(400).json({ error: e }) 
     }
+     
   });
+
+
+router.route('/invite').post(async (req, res) => {
+  try {
+    if (!req.session.user || req.session.user.role !== "super admin") {
+      return res.status(403).json({ error: "Must be logged in as a super admin" });
+    }
+
+    let companyName = checkName(req.body.companyName);
+    let email = req.body.email;
+    let role = checkRole(req.body.role);
+
+    const registered = await invite(companyName, email, role);
+
+    if (registered.registrationCompleted) {
+      return res.status(200).json({ message: "Successfully sent invite" });
+    }
+
+    return res.status(500).json({ error: "Internal Server Error" });
+
+  } catch (e) {
+    console.log(e);
+    return res.status(400).json({ error: e });
+  }
+});
+
+
+
 
 
 router.route('/signout').get(async (req, res) => {
