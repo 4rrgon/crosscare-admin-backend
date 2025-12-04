@@ -25,17 +25,18 @@ ADMINPASSWORD=password
 
 # Endpoints
 
-POST /register (This is temporary and will be removed in the future)
+POST /invite
 
 companyName
 
 email
 
+role (Must be super admin, tenant admin, or support)
+POST /register/:id
+
 password
 
 confirmPassword
-
-role (Must be super admin, tenant admin, or support)
 
 POST /login
 
