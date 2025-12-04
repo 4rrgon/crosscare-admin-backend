@@ -7,15 +7,21 @@ Create a postgres DB with the table "adminportal", and populate it with the nece
 
 CREATE TABLE public.adminportal ( companyname text NULL, email text NULL, "password" text NULL, "role" text NULL, signupdate text NULL, lastlogin text NULL );
 
-Create a .env file containing a secret and url for your postgres instance as follows:
+Create a .env file containing a secret and url for your postgres instance as follows, as well as your smtp email and password (I recommend using gmail), the current host, and the initial admin portal username and password:
 
-SECRET=someSecretString
+SECRET=someSecret
 
-URL=postgres://username:password@host:port/database
+URL=dbUrl
 
-Run npm i to install dependecies
+SMTPEMAIL=email@example.com
 
-Run npm start to run the server on localhost:3000
+SMTPPASSWORD=password
+
+HOST=localhost:3000
+
+ADMINEMAIL=admin@example.com
+
+ADMINPASSWORD=password
 
 # Endpoints
 
