@@ -39,12 +39,6 @@ password
 
 confirmPassword
 
-POST /register/:id
-
-password
-
-confirmPassword
-
 POST /login
 
 email
