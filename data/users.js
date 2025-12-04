@@ -114,7 +114,6 @@ export const invite = async (companyName, email, role) => {
       `SELECT email, "password" FROM adminportal WHERE email = $1`,
       [email]
     );
-    console.log(dupCheck)
     if (dupCheck.rowCount > 0 && typeof dupCheck.rows[0].password != 'undefined') {
         throw `User with id of ${email} already exists`;
     }
@@ -167,10 +166,7 @@ export const acceptInvite = async (id, password) => {
       [id]
     );
 
-    console.log(timeCheck.rows[0].expirationdate)
-    console.log(typeof(timeCheck.rows[0].expirationdate))
     const isExpired = await hasDatePassed(timeCheck.rows[0].expirationdate)
-    console.log(isExpired)
 
     if(isExpired){
       throw 'Invite has expired'

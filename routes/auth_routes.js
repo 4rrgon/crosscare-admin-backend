@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt"
 import session from "express-session";
 import { checkName, checkPassword, checkRole, checkEmail } from "../helpers.js";
-import { acceptInvite, login, register, invite } from "../data/users.js";
+import { acceptInvite, login, invite } from "../data/users.js";
 
 const router = Router()
 
@@ -35,7 +35,6 @@ router
         role: user.role
       }
 
-      console.log(req.session);
 
       return res.json( user )
       
