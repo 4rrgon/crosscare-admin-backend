@@ -25,7 +25,7 @@ const sendEmail = async (recipient, companyName, invite) => {
       from: smtpEmail,
       to: recipient,
       subject: 'CrossCare Registration',
-      html: `${companyName}, click <a href="http://${host}/register/${invite}" target="_blank">this link</a> to complete registration for the Crosscare Tech Admin Portal. This link is valid for seven days. <br> <br> <img src="https://img1.wsimg.com/isteam/ip/2b1875ec-3fdc-443f-afbe-539cc67fb38e/blob-4cb1f5b.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="CrossCare Tech Logo - A purple and blue heart with the words CrossCare Tech underneath">`,
+      html: `${companyName}, click <a href="http://${host}/invite/${invite}" target="_blank">this link</a> to complete registration for the Crosscare Tech Admin Portal. This link is valid for seven days. <br> <br> <img src="https://img1.wsimg.com/isteam/ip/2b1875ec-3fdc-443f-afbe-539cc67fb38e/blob-4cb1f5b.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="CrossCare Tech Logo - A purple and blue heart with the words CrossCare Tech underneath">`,
   };
   
   try {
