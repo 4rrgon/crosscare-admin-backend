@@ -32,6 +32,13 @@ companyName
 email
 
 role (Must be super admin, tenant admin, or support)
+
+POST /register/:id
+
+password
+
+confirmPassword
+
 POST /register/:id
 
 password
