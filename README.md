@@ -60,6 +60,6 @@ confirmPassword
 
 GET /metrics/patients (Returns a array of all patients)
 
-GET /metric/numberofpatients
+GET /metrics/numberofpatients
 
-GET /patient/:id (Returns info for a specific patient)
+GET /metrics/patient/:id (Returns info for a specific patient)
