@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import bcrypt from "bcrypt";
 import { randomBytes } from 'crypto';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 const smtpEmail = process.env.SMTPEMAIL
@@ -11,33 +12,6 @@ const smtpPassword = process.env.SMTPPASSWORD
 const host = process.env.HOST
 const adminEmail = process.env.ADMINEMAIL
 const adminPassword = process.env.ADMINPASSWORD
-
-
-const sendEmail = async (recipient, companyName, invite) => {
-  const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-          user: smtpEmail,
-          pass: smtpPassword
-      }
-  });
-  const mailOptions = {
-      from: smtpEmail,
-      to: recipient,
-      subject: 'CrossCare Registration',
-      html: `${companyName}, click <a href="http://${host}/invite/${invite}" target="_blank">this link</a> to complete registration for the Crosscare Tech Admin Portal. This link is valid for seven days. <br> <br> <img src="https://img1.wsimg.com/isteam/ip/2b1875ec-3fdc-443f-afbe-539cc67fb38e/blob-4cb1f5b.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="CrossCare Tech Logo - A purple and blue heart with the words CrossCare Tech underneath">`,
-  };
-  
-  try {
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Email sent: ' + info.response);
-  } catch (error) {
-      console.error('Error: ' + error);
-  }
-
-
-}
-
 
 const hasDatePassed = async (sqlDate) => {
   const datePattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
@@ -88,6 +62,140 @@ const getExpirationDate = async () => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
+const sendEmail = async (recipient, content) => {
+  const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+          user: smtpEmail,
+          pass: smtpPassword
+      }
+  });
+  const mailOptions = {
+      from: smtpEmail,
+      to: recipient,
+      subject: 'CrossCare Tech Portal',
+      html: content,
+  };
+  
+  try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Email sent: ' + info.response);
+  } catch (error) {
+      console.error('Error: ' + error);
+  }
+
+
+}
+
+export const invitePasswordReset = async (email) => {
+  if(!email){
+    throw 'Must provide email'
+  }
+  if(!checkEmail(email))
+    throw 'Email is invalid'
+  
+  email = email.trim().toLowerCase();
+
+  const generateRandomString = (length) => {
+    return randomBytes(length).toString('hex').slice(0, length);
+  };
+
+  const inviteCode = generateRandomString(64);
+
+  const expirationDate = await getExpirationDate();
+
+  const client = await pool.connect();
+  try{
+    const dupCheck = await client.query(
+      `SELECT email FROM adminportal WHERE email = $1`,
+      [email]
+    );
+    if (dupCheck.rowCount == 0) {
+        throw `User with id of ${email} does not exist`;
+    }
+    
+    const insertQuery = `
+      UPDATE adminportal
+      SET invite = $1,
+        expirationDate = $2
+      WHERE email = $3
+    `;
+    const insertValues = [inviteCode, expirationDate, email];
+
+    const insertInfo = await client.query(insertQuery, insertValues);
+
+    if (!insertInfo.rowCount)
+      throw `Could not add invite for user with ID of ${email}`;
+
+    const content = `Click <a href="http://${host}/pwreset/${inviteCode}" target="_blank">this link</a> to reset your password for the Crosscare Tech Admin Portal. This link is valid for seven days. <br> <br> <img src="https://img1.wsimg.com/isteam/ip/2b1875ec-3fdc-443f-afbe-539cc67fb38e/blob-4cb1f5b.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="CrossCare Tech Logo">`
+
+    await sendEmail(email, content);
+
+    return { inviteSent: true };
+
+  } finally{
+    client.release();
+  }
+
+}
+
+export const resetPassword = async (newPassword, inviteCode) => {
+  if(!newPassword){
+    throw 'Must provide newPassword'
+  }
+  newPassword = checkPassword(newPassword);
+  const hashedPassword = await bcrypt.hash(newPassword, 16);
+
+  const client = await pool.connect();
+  try {
+    const inviteCheck = await client.query(
+      `SELECT invite FROM adminportal WHERE invite = $1`,
+      [inviteCode]
+    );
+
+    if (inviteCheck.rowCount == 0)
+      throw `Invite code not found`;
+
+    const timeCheck = await client.query(
+      `SELECT expirationDate FROM adminportal WHERE invite = $1`,
+      [inviteCode]
+    );
+
+    const isExpired = await hasDatePassed(timeCheck.rows[0].expirationdate)
+
+    if(isExpired){
+      throw 'Invite has expired'
+    }
+
+    const dupCheck = await client.query(
+      `SELECT email, "password" FROM adminportal WHERE invite = $1`,
+      [inviteCode]
+    );
+    console.log(dupCheck)
+    if (dupCheck.rowCount < 0 || typeof dupCheck.rows[0].password == 'undefined') {
+        throw `User not registered`;
+    }
+
+    
+    const insertQuery = `
+      UPDATE adminportal
+      SET password = $1, invite = NULL, expirationDate = NULL
+      WHERE invite = $2
+    `;
+    const insertValues = [hashedPassword, inviteCode];
+    const insertInfo = await client.query(insertQuery, insertValues);
+
+    if (!insertInfo.rowCount)
+      throw `Could not update password for user`;
+
+    return { passwordUpdated: true };
+  } finally {
+    client.release();
+  }
+}
+
+
+
 export const invite = async (companyName, email, role) => {
   if(!companyName || !email || !role)
     throw 'Must provide companyName, email, and role'
@@ -134,7 +242,9 @@ export const invite = async (companyName, email, role) => {
     if (!insertInfo.rowCount || !insertInfo.rows[0])
       throw `Could not add user with ID of ${email}`;
 
-    await sendEmail(email, companyName, inviteCode);
+    const content = `${companyName}, click <a href="http://${host}/invite/${inviteCode}" target="_blank">this link</a> to complete registration for the Crosscare Tech Admin Portal. This link is valid for seven days. <br> <br> <img src="https://img1.wsimg.com/isteam/ip/2b1875ec-3fdc-443f-afbe-539cc67fb38e/blob-4cb1f5b.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95" alt="CrossCare Tech Logo">`
+
+    await sendEmail(email, content);
 
     return { registrationCompleted: true };
 

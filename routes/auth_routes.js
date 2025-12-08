@@ -1,8 +1,6 @@
 import { Router } from "express";
-import bcrypt from "bcrypt"
-import session from "express-session";
 import { checkName, checkPassword, checkRole, checkEmail } from "../helpers.js";
-import { acceptInvite, login, invite } from "../data/users.js";
+import { acceptInvite, login, invite, invitePasswordReset, resetPassword } from "../data/users.js";
 
 const router = Router()
 
@@ -36,11 +34,78 @@ router
       }
 
 
-      return res.json( user )
+      return res.status(200).json( user )
       
     } catch (e) {
-      return res.status(400).render('login', { error: e })
+      return res.status(400).json({ error: e }) 
     }
+  });
+
+router
+  .route('/reset')
+  .post(async (req, res) => {
+    try{
+      let email = req.body.email;
+
+      let missing = []
+      if (!email)
+        missing.push("email")
+
+      if (missing.length > 0){
+        return res.status(400).json({error: 'Must provide all fields'})
+      }
+
+      if(!checkEmail(email))
+        throw 'Email is invalid'
+      
+      email = email.trim().toLowerCase();
+
+
+      const user = await invitePasswordReset(email)
+
+      return res.status(200).json({message: "email sent"} )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  });
+
+router
+  .route('/reset/:id')
+  .post(async (req, res) => {
+    try {
+      let password = req.body.password;
+      let confirmPassword = req.body.confirmPassword;
+
+      let missing = []
+      if (!password)
+        missing.push("password")
+      if (!confirmPassword)
+        missing.push("confirmPassword")
+
+
+      if (missing.length > 0){
+        return res.status(400).json({error: 'Must provide all fields'})
+      }
+
+      password = checkPassword(password)
+      confirmPassword = checkPassword(confirmPassword)
+
+      if (password !== confirmPassword){
+        return res.status(400).json({ error: "The passwords do not match" });
+      }
+
+      const registered = await resetPassword(password, req.params.id)
+      if (registered.passwordUpdated){
+        return res.status(200).json( { message: "Updated Password" } );
+      } else {
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+    } catch (e) {
+      console.log(e)
+      return res.status(400).json({ error: e }) 
+    }
+     
   });
 
 router

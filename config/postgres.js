@@ -8,6 +8,10 @@ const pgUrl = process.env.URL;
 
 const pool = new Pool({
   connectionString: pgUrl,
+  ssl: {
+    rejectUnauthorized: false
+  }
+
 });
 
 export default pool;

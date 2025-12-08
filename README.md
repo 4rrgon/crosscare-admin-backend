@@ -46,3 +46,20 @@ email
 password
 
 GET /signout
+
+POST /reset (Send password reset email)
+
+email
+
+POST /reset/:id (Resets password using token generated in the email)
+
+password
+
+confirmPassword
+
+
+GET /metrics/patients (Returns a array of all patients)
+
+GET /metric/numberofpatients
+
+GET /patient/:id (Returns info for a specific patient)
