@@ -1,187 +1,198 @@
-import { Router } from "express";
-import { checkName, checkPassword, checkRole, checkEmail } from "../helpers.js";
-import { acceptInvite, login, invite, invitePasswordReset, resetPassword } from "../data/users.js";
+import { Router } from 'express';
+import jwt from 'jsonwebtoken';
+import { login as loginUser } from '../data/users.js'; 
 
-const router = Router()
-
-
+const router = Router();
+const JWT_COOKIE_NAME = 'auth_token';
+const TOKEN_EXPIRY = '2h';
 
 router
   .route('/login')
   .post(async (req, res) => {
-    try{
+    try {
       let email = req.body.email;
       let password = req.body.password;
 
-      let missing = []
-      if (!email)
-        missing.push("email")
-      if (!password)
-        missing.push("password")
-
-      if (missing.length > 0){
+      let missing = [];
+      if (!email) missing.push('email');
+      if (!password) missing.push('password');
+      if (missing.length > 0) {
         return res.status(400).render('register', {
-          error: `The missing fields are: ${missing.join(", ")}`
-        })
+          error: `The missing fields are: ${missing.join(', ')}`
+        });
       }
 
-      const user = await login(email, password)
-        
-      req.session.user = {
+      const user = await loginUser(email, password);
+
+      const payload = {
         companyName: user.companyName,
         email: user.email,
         role: user.role
+      };
+
+      const secret = process.env.SECRET;
+      if (!secret) {
+        return res.status(500).json({ error: 'Server misconfiguration: SECRET missing' });
       }
 
+      const token = jwt.sign(payload, secret, { expiresIn: TOKEN_EXPIRY });
 
-      return res.status(200).json( user )
-      
+      res.cookie(JWT_COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: false, 
+        sameSite: 'lax', 
+        maxAge: 2 * 60 * 60 * 1000
+      });
+
+      return res.status(200).json(user);
     } catch (e) {
-      return res.status(400).json({ error: e }) 
+      return res.status(400).json({ error: e.toString ? e.toString() : e });
     }
   });
-
-router
-  .route('/reset')
-  .post(async (req, res) => {
-    try{
-      let email = req.body.email;
-
-      let missing = []
-      if (!email)
-        missing.push("email")
-
-      if (missing.length > 0){
-        return res.status(400).json({error: 'Must provide all fields'})
-      }
-
-      if(!checkEmail(email))
-        throw 'Email is invalid'
-      
-      email = email.trim().toLowerCase();
-
-
-      const user = await invitePasswordReset(email)
-
-      return res.status(200).json({message: "email sent"} )
-      
-    } catch (e) {
-      return res.status(400).json({ error: e }) 
-    }
-  });
-
-router
-  .route('/reset/:id')
-  .post(async (req, res) => {
-    try {
-      let password = req.body.password;
-      let confirmPassword = req.body.confirmPassword;
-
-      let missing = []
-      if (!password)
-        missing.push("password")
-      if (!confirmPassword)
-        missing.push("confirmPassword")
-
-
-      if (missing.length > 0){
-        return res.status(400).json({error: 'Must provide all fields'})
-      }
-
-      password = checkPassword(password)
-      confirmPassword = checkPassword(confirmPassword)
-
-      if (password !== confirmPassword){
-        return res.status(400).json({ error: "The passwords do not match" });
-      }
-
-      const registered = await resetPassword(password, req.params.id)
-      if (registered.passwordUpdated){
-        return res.status(200).json( { message: "Updated Password" } );
-      } else {
-        return res.status(500).json({ error: "Internal Server Error" });
-      }
-    } catch (e) {
-      console.log(e)
-      return res.status(400).json({ error: e }) 
-    }
-     
-  });
-
-router
-  .route('/register/:id')
-  .post(async (req, res) => {
-    try {
-      let password = req.body.password;
-      let confirmPassword = req.body.confirmPassword;
-
-      let missing = []
-      if (!password)
-        missing.push("password")
-      if (!confirmPassword)
-        missing.push("confirmPassword")
-
-
-      if (missing.length > 0){
-        return res.status(400).json({error: 'Must provide all fields'})
-      }
-
-      password = checkPassword(password)
-      confirmPassword = checkPassword(confirmPassword)
-
-      if (password !== confirmPassword){
-        return res.status(400).json({ error: "The passwords do not match" });
-      }
-
-      const registered = await acceptInvite(req.params.id, password)
-      if (registered.registrationCompleted){
-        return res.status(200).json( { message: "Successfully signed up" } );
-      } else {
-        return res.status(500).json({ error: "Internal Server Error" });
-      }
-    } catch (e) {
-      console.log(e)
-      return res.status(400).json({ error: e }) 
-    }
-     
-  });
-
-
-router.route('/invite').post(async (req, res) => {
-  try {
-    if (!req.session.user || req.session.user.role !== "super admin") {
-      return res.status(403).json({ error: "Must be logged in as a super admin" });
-    }
-
-    let companyName = checkName(req.body.companyName);
-    let email = req.body.email;
-    let role = checkRole(req.body.role);
-
-    const registered = await invite(companyName, email, role);
-
-    if (registered.registrationCompleted) {
-      return res.status(200).json({ message: "Successfully sent invite" });
-    }
-
-    return res.status(500).json({ error: "Internal Server Error" });
-
-  } catch (e) {
-    console.log(e);
-    return res.status(400).json({ error: e });
-  }
-});
-
-
-
-
 
 router.route('/signout').get(async (req, res) => {
   try {
-    req.session.destroy()
-    res.status(200).json( { message: "Successfully signed out" } )
+    res.clearCookie(JWT_COOKIE_NAME, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax'
+    });
+    res.status(200).json({ message: 'Successfully signed out' });
   } catch (e) {
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+
+// router
+//   .route('/reset')
+//   .post(async (req, res) => {
+//     try{
+//       let email = req.body.email;
+
+//       let missing = []
+//       if (!email)
+//         missing.push("email")
+
+//       if (missing.length > 0){
+//         return res.status(400).json({error: 'Must provide all fields'})
+//       }
+
+//       if(!checkEmail(email))
+//         throw 'Email is invalid'
+      
+//       email = email.trim().toLowerCase();
+
+
+//       const user = await invitePasswordReset(email)
+
+//       return res.status(200).json({message: "email sent"} )
+      
+//     } catch (e) {
+//       return res.status(400).json({ error: e }) 
+//     }
+//   });
+
+// router
+//   .route('/reset/:id')
+//   .post(async (req, res) => {
+//     try {
+//       let password = req.body.password;
+//       let confirmPassword = req.body.confirmPassword;
+
+//       let missing = []
+//       if (!password)
+//         missing.push("password")
+//       if (!confirmPassword)
+//         missing.push("confirmPassword")
+
+
+//       if (missing.length > 0){
+//         return res.status(400).json({error: 'Must provide all fields'})
+//       }
+
+//       password = checkPassword(password)
+//       confirmPassword = checkPassword(confirmPassword)
+
+//       if (password !== confirmPassword){
+//         return res.status(400).json({ error: "The passwords do not match" });
+//       }
+
+//       const registered = await resetPassword(password, req.params.id)
+//       if (registered.passwordUpdated){
+//         return res.status(200).json( { message: "Updated Password" } );
+//       } else {
+//         return res.status(500).json({ error: "Internal Server Error" });
+//       }
+//     } catch (e) {
+//       console.log(e)
+//       return res.status(400).json({ error: e }) 
+//     }
+     
+//   });
+
+// router
+//   .route('/register/:id')
+//   .post(async (req, res) => {
+//     try {
+//       let password = req.body.password;
+//       let confirmPassword = req.body.confirmPassword;
+
+//       let missing = []
+//       if (!password)
+//         missing.push("password")
+//       if (!confirmPassword)
+//         missing.push("confirmPassword")
+
+
+//       if (missing.length > 0){
+//         return res.status(400).json({error: 'Must provide all fields'})
+//       }
+
+//       password = checkPassword(password)
+//       confirmPassword = checkPassword(confirmPassword)
+
+//       if (password !== confirmPassword){
+//         return res.status(400).json({ error: "The passwords do not match" });
+//       }
+
+//       const registered = await acceptInvite(req.params.id, password)
+//       if (registered.registrationCompleted){
+//         return res.status(200).json( { message: "Successfully signed up" } );
+//       } else {
+//         return res.status(500).json({ error: "Internal Server Error" });
+//       }
+//     } catch (e) {
+//       console.log(e)
+//       return res.status(400).json({ error: e }) 
+//     }
+     
+//   });
+
+
+// router.route('/invite').post(async (req, res) => {
+//   try {
+//     if (!req.session.user || req.session.user.role !== "super admin") {
+//       return res.status(403).json({ error: "Must be logged in as a super admin" });
+//     }
+
+//     let companyName = checkName(req.body.companyName);
+//     let email = req.body.email;
+//     let role = checkRole(req.body.role);
+
+//     const registered = await invite(companyName, email, role);
+
+//     if (registered.registrationCompleted) {
+//       return res.status(200).json({ message: "Successfully sent invite" });
+//     }
+
+//     return res.status(500).json({ error: "Internal Server Error" });
+
+//   } catch (e) {
+//     console.log(e);
+//     return res.status(400).json({ error: e });
+//   }
+// });
+
 
 export default router
