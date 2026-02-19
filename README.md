@@ -48,7 +48,7 @@ GET /metrics/:id/numpatients (Returns the number of patients a doctor has)
 
 
 
-# Deprecated Endpoints
+# Removed Endpoints
 
 POST /invite
 
