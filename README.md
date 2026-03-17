@@ -45,7 +45,19 @@ GET /metrics/doctor/:id/patients (Returns the patients for a specific doctor)
 
 GET /metrics/:id/numpatients (Returns the number of patients a doctor has)
 
+(Note that the following endpoints are going to return nothing since the db for them is empty)
 
+GET /metrics/bloodpressure (Returns all blood pressure readings in the database for everyone)
+
+GET /metrics/bloodpressurehistory/:id (Returns all blood pressure readings for a specific person)
+
+GET /metrics/avgbloodpressure (Returns the average blood pressure of everyone on the app)
+
+GET /metrics/glucoselevel (Returns all glucose readings in the app)
+
+GET /metrics/avgglucoselevel (Returns the average glucose levelof everyone on the app)
+
+GET /metrics/getglucoselevelhistory/:id
 
 
 # Removed Endpoints

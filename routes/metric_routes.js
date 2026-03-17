@@ -65,8 +65,6 @@ router
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      console.log(req.query.pageSize, req.query.pageNum)
-
       const user = await metricData.getDoctors(req.query.pageSize || 10, req.query.pageNum || 1);
 
       return res.status(200).json( user )
@@ -144,7 +142,124 @@ router
     }
   });
 
+router
+  .route('/bloodpressure')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getAllBloodPressureReadings();
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  });
 
 
+ router
+  .route('/bloodpressurehistory/:id')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getBloodPressureHistory(req.params.id, req.query.pageSize || 10);
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+ router
+  .route('/avgbloodpressure')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.averageBloodPressure();
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+router
+  .route('/glucoselevel')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getAllGlucoseLevelReadings();
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  });
+
+ router
+  .route('/avgglucoselevel')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.averageGlucoseLevel();
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+ router
+  .route('/getglucoselevelhistory/:id')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getGlucoseLevelHistory(req.params.id, req.query.pageSize || 10);
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+ router
+  .route('/getavgmeals/:id')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getAverageMealsPerDay(req.params.id);
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
 
 export default router;
