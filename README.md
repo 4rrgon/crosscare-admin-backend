@@ -67,6 +67,10 @@ GET /metrics/getSessionTimesSince/:date (Returns all session times since a given
 
 GET /metrics/getSessionTimesBetween/:startDate/:endDate (Returns all session metrics between the given dates)
 
+GET /getSessionTimeOnDate/:date (Returns average session time on a given day)
+
+
+
 # Removed Endpoints
 
 POST /invite

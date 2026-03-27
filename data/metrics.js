@@ -725,3 +725,27 @@ export const getAllSessionTimes = async () => {
     client.release();
   }
 }
+
+export const averageSessionTimeOnDay = async (date) => {
+  const client = await pool.connect();
+
+  try {
+    const formattedDate = new Date(date).toISOString().split('T')[0];
+
+    const res = await client.query(
+      `
+      SELECT AVG("durationMinutes") AS avg_session_time
+      FROM "session_metrics"
+      WHERE DATE("loginTime") = $1
+      `,
+      [formattedDate]
+    );
+
+    return {
+      averageSessionTime: toNumber(res.rows[0]?.avg_session_time, 0),
+    };
+  } finally {
+    client.release();
+  }
+}
+

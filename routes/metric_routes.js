@@ -332,4 +332,21 @@ router
     }
   }); 
 
+  router
+  .route('/getSessionTimeOnDate/:date')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.averageSessionTimeOnDay(req.params.date);
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
 export default router
