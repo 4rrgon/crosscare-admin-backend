@@ -59,6 +59,8 @@ GET /metrics/avgglucoselevel (Returns the average glucose levelof everyone on th
 
 GET /metrics/getglucoselevelhistory/:id
 
+GET /metrics/avgSessionTime (Returns average session time of everyone on the app)
+
 
 # Removed Endpoints
 
