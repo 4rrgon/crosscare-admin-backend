@@ -61,6 +61,11 @@ GET /metrics/getglucoselevelhistory/:id
 
 GET /metrics/avgSessionTime (Returns average session time of everyone on the app)
 
+GET /metrics/getAllSessionTimes (Return all session metrics from the DB)
+
+GET /metrics/getSessionTimesSince/:date (Returns all session times since a given date, time is encoded as follows: 2026-03-24%2018:24:25.126)
+
+GET /metrics/getSessionTimesBetween/:startDate/:endDate (Returns all session metrics between the given dates)
 
 # Removed Endpoints
 

@@ -279,4 +279,57 @@ router
     }
   }); 
 
-export default router;
+ router
+  .route('/getAllSessionTimes')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getAllSessionTimes();
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+  router
+  .route('/getSessionTimesSince/:date')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      console.log(req.params.date)
+
+      const user = await metricData.getAllSessionTimesSince(req.params.date);
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+  router
+  .route('/getSessionTimesBetween/:startDate/:endDate')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getAllSessionMetricsBetween(req.params.startDate, req.params.endDate);
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+export default router

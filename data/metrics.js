@@ -646,3 +646,82 @@ export const getAvgSessionTime = async () => {
     client.release();
   }
 }
+
+export const getAllSessionTimesSince = async (sinceDate) => {
+  const client = await pool.connect();
+
+  try {
+    const res = await client.query(
+      `
+      SELECT *
+      FROM "session_metrics"
+      WHERE "loginTime" >= $1
+      ORDER BY "loginTime" DESC
+      `,
+      [sinceDate]
+    );
+
+    return res.rows.map((row) => ({
+      id: row.id,
+      patientId: row.patientId,
+      loginTime: toDateValue(row.loginTime),
+      logoutTime: toDateValue(row.logoutTime),
+      durationMinutes: row.durationMinutes,
+      date: toDateValue(row.date),
+    }));
+  } finally {
+    client.release();
+  }
+}
+
+export const getAllSessionMetricsBetween = async (startDate, endDate) => {
+  const client = await pool.connect();
+
+  try {
+    const res = await client.query(
+      `
+      SELECT *
+      FROM "session_metrics"
+      WHERE "loginTime" >= $1 AND "loginTime" <= $2
+      ORDER BY "loginTime" DESC
+      `,
+      [startDate, endDate]
+    );
+
+    return res.rows.map((row) => ({
+      id: row.id,
+      patientId: row.patientId,
+      loginTime: toDateValue(row.loginTime),
+      logoutTime: toDateValue(row.logoutTime),
+      durationMinutes: row.durationMinutes,
+      date: toDateValue(row.date),
+    }));
+  } finally {
+    client.release();
+  }
+}
+
+export const getAllSessionTimes = async () => {
+  const client = await pool.connect();
+
+  try {
+    const res = await client.query(
+      `
+      SELECT *
+      FROM "session_metrics"
+      `
+    );
+
+    return res.rows.map((row) => ({
+      id: row.id,
+      patientId: row.patientId,
+      loginTime: toDateValue(row.loginTime),
+      logoutTime: toDateValue(row.logoutTime),
+      durationMinutes: row.durationMinutes,
+      date: toDateValue(row.date),
+    }));
+
+  } finally {
+    client.release();
+  }
+}
