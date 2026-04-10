@@ -69,7 +69,11 @@ GET /metrics/getSessionTimesBetween/:startDate/:endDate (Returns all session met
 
 GET /getSessionTimeOnDate/:date (Returns average session time on a given day)
 
+GET /getAverageAiTime (Returns the overall average ai session time)
 
+GET /getAiTimesBetween/:startDate/:endDate (Return all of the AI usage metrics between the given dates)
+
+GET /getAverageAiTimeOnDay/:date (Returns the average AI usage per day)
 
 # Removed Endpoints
 

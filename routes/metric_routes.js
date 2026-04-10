@@ -349,4 +349,58 @@ router
     }
   }); 
 
+  router
+  .route('/getAverageAiTime')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getAverageAiTime();
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+
+  router
+  .route('/getAverageAiTimeOnDay/:date')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getAverageAiTimeOnDay(req.params.date);
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+
+  router
+  .route('/getAiTimesBetween/:startDate/:endDate')
+  .get(async (req, res) => {
+    try{
+      if(req.user.role !== 'super admin' || !req.user){
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const user = await metricData.getAverageAiTimesBetween(req.params.startDate, req.params.endDate);
+
+      return res.status(200).json( user )
+      
+    } catch (e) {
+      return res.status(400).json({ error: e }) 
+    }
+  }); 
+
+
 export default router

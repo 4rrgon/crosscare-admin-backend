@@ -749,3 +749,89 @@ export const averageSessionTimeOnDay = async (date) => {
   }
 }
 
+export const getAverageAiTime = async () => {
+  const client = await pool.connect();
+
+  try {
+    const res = await client.query(
+      `
+      SELECT AVG("duration_minutes") AS avg_ai_time
+      FROM "ai_engagements"
+      `
+    );
+
+    return {
+      averageAiTime: toNumber(res.rows[0]?.avg_ai_time, 0),
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export const getAverageAiTimeOnDay = async (date) => {
+  const client = await pool.connect();
+
+  try {
+    const formattedDate = new Date(date).toISOString().split('T')[0];
+
+    const res = await client.query(
+      `
+      SELECT AVG("duration_minutes") AS avg_ai_time
+      FROM "ai_engagements"
+      WHERE DATE("session_start_at") = $1
+      `,
+      [formattedDate]
+    );
+
+    return {
+      averageAiTime: toNumber(res.rows[0]?.avg_ai_time, 0),
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export const getAverageAiTimesBetween = async (startDate, endDate) => {
+  const client = await pool.connect();
+
+  try {
+    const res = await client.query(
+      `
+      SELECT DATE("session_start_at") AS engagement_date, AVG("duration_minutes") AS avg_ai_time, patient_id
+      FROM "ai_engagements"
+      WHERE DATE("session_start_at") >= $1 AND DATE("session_start_at") <= $2
+      GROUP BY DATE("session_start_at")
+      ORDER BY engagement_date DESC
+      `,
+      [startDate, endDate]
+    );
+
+    return res.rows.map((row) => ({
+      date: toDateValue(row.engagement_date),
+      averageAiTime: toNumber(row.avg_ai_time, 0),
+    }));
+  } finally {
+    client.release();
+  }
+}
+
+export const getAverageAiTimeForPatient = async (patientId) => {
+  const client = await pool.connect();
+
+  try {
+    const res = await client.query(
+      `
+      SELECT AVG("duration_minutes") AS avg_ai_time
+      FROM "ai_engagements"
+      WHERE patient_id = $1
+      `,
+      [patientId]
+    );
+
+    return {
+      averageAiTime: toNumber(res.rows[0]?.avg_ai_time, 0),
+    };
+  } finally {
+    client.release();
+  }
+}
