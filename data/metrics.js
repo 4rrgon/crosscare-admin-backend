@@ -43,6 +43,7 @@ function mapPatientRow(row, metrics = {}) {
     calorieGoal: row.calorieGoal,
     stepsGoal: row.stepsGoal,
     isEmailVerified: row.isEmailVerified,
+    numberOfLogins: row.numberOfLogins ?? null,
 
     weight: row.weight ?? null,
     weight_unit: row.weight_unit ?? null,
@@ -59,6 +60,7 @@ function mapPatientRow(row, metrics = {}) {
     averageMealsPerDay: metrics.averageMealsPerDay ?? null,
     averageSessionTime: metrics.averageSessionTime ?? null,
     sessionCount: metrics.sessionCount ?? 0,
+
   };
 }
 
@@ -156,6 +158,7 @@ export const getPatients = async (pageSize = 10, pageNum = 1) => {
         p."calorieGoal",
         p."stepsGoal",
         p."isEmailVerified",
+        p."numberOfLogins",
 
         ${patientActivityFields},
 
@@ -275,6 +278,7 @@ export const getPatient = async (id) => {
         p."calorieGoal",
         p."stepsGoal",
         p."isEmailVerified",
+        p."numberOfLogins",
 
         ${patientActivityFields},
 
